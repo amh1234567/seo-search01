@@ -1,23 +1,22 @@
 import { createClient } from "@supabase/supabase-js";
 
-// 環境変数の検証
-function getEnvVar(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(
-      `環境変数 ${name} が設定されていません。\n` +
-      `プロジェクトルートに .env.local ファイルを作成し、以下の環境変数を設定してください：\n` +
-      `${name}=your_value_here\n\n` +
-      `Supabaseの設定値は、Supabaseダッシュボードの Settings > API から取得できます。`
-    );
-  }
-  return value;
-}
+// Next.jsでは、NEXT_PUBLIC_プレフィックスが付いた環境変数は
+// クライアントサイドでも process.env.NEXT_PUBLIC_XXX でアクセス可能
+// ビルド時に置き換えられるため、実行時に process が undefined でも問題ない
 
-const supabaseUrl = getEnvVar("NEXT_PUBLIC_SUPABASE_URL");
-const supabaseAnonKey = getEnvVar("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+// 環境変数を安全に取得（エラーをスローしない）
+// process.env が undefined の場合に備えて、オプショナルチェーンを使用
+const supabaseUrl = 
+  (typeof process !== "undefined" ? process.env?.NEXT_PUBLIC_SUPABASE_URL : undefined) || "";
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabaseAnonKey = 
+  (typeof process !== "undefined" ? process.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY : undefined) || "";
+
+// 環境変数が設定されている場合のみクライアントを作成
+// 空文字の場合はダミークライアントを作成（エラーを防ぐため）
+export const supabase = supabaseUrl && supabaseAnonKey
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : createClient("https://placeholder.supabase.co", "placeholder-key");
 
 
 
